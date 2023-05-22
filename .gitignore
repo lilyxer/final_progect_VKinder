@@ -1,0 +1,7 @@
+config.txt
+.git
+/__pycache__/
+/venv_VKinder/
+/.idea/
+
+source venv_VKinder/Scripts/activate
