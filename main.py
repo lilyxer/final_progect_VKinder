@@ -1,27 +1,27 @@
-import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
-from vk_api.utils import get_random_id
-import config
+from models.VkBot import VkBot
 
 
-token = config.TOKEN
-authorize = vk_api.VkApi(token=token)
-longpoll = VkLongPoll(authorize)
+# def write_msg(user_id, message):
+#     authorize.method('messages.send', {'user_id': user_id, 'message': message,
+#                                        'random_id': get_random_id()})
 
+# # авторизуемся
+# authorize = vk_api.VkApi(token=config.GROUP_TOKEN)
+# user_access = vk_api.VkApi(token=config.CLIENT_TOKEN)
 
-def write_msg(user_id, message):
-    authorize.method('messages.send', {'user_id': user_id, 'message': message,
-                                       'random_id': get_random_id(),})
- 
-# Прослушивание сервера на событие
-for event in longpoll.listen():
-    if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-        request = event.text
-        sender = event.user_id  # айдишник отправителя
+# # получаем доступ к событиям
+# longpoll = VkLongPoll(authorize)
+# vk = authorize.get_api() 
+# # user_vk = user_access.get_api()
 
-        if request == "привет":
-            write_msg(event.user_id, f"Хай, {sender}")
-        elif request == "пока":
-            write_msg(event.user_id, "Пока((")
-        else:
-            write_msg(event.user_id, "Не поняла вашего ответа...")
+if __name__ == '__main__':
+    vk_bot = VkBot()
+    # Прослушивание сервера на событие
+    print('ckeiftv')
+    for event in vk_bot.longpoll.listen():
+        if event.type == VkEventType.MESSAGE_NEW:
+            if event.to_me:
+                msg = event.text.lower()
+                sender = event.user_id
+                vk_bot.write_msg(user_id=sender, message=msg)

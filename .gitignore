@@ -3,5 +3,7 @@ config.py
 /__pycache__/
 /venv_VKinder/
 /.idea/
+.env
+
 
 source venv_VKinder/Scripts/activate
