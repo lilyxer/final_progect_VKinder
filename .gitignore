@@ -5,6 +5,6 @@ config.py
 /venv_VKinder/
 /.idea/
 .env
-
+_.py
 
 source venv_VKinder/Scripts/activate
