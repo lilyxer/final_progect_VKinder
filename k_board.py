@@ -28,6 +28,8 @@ def _confirm(message:str, params: dict) -> tuple:
     """
     keyboard = VkKeyboard()
     keyboard.add_button('Да')
+    keyboard.add_button('Нет')
+    keyboard.add_line()
     keyboard.add_button('Завершить')
     msg = f'{ANSWERS.get(message)}\nВозраст: {params["age"]}, Город: {params["city"]}'
     return msg, keyboard.get_keyboard(), None
@@ -37,12 +39,26 @@ def _next_step(message:str) -> tuple:
     :return: ответ на сообщение и экземпляр калвиатуры, закрывает диалог
     """
     keyboard = VkKeyboard()
-    'search_users'
-    keyboard.add_button('Далее')
-    keyboard.add_button('В избранное')
+    keyboard.add_button('Город')
+    keyboard.add_button('Возраст')
     keyboard.add_line()
     keyboard.add_button('Завершить')
-    return
+    return f'{ANSWERS.get(message)}', keyboard.get_keyboard(), None
+
+
+def _correct_params(message:str) -> tuple:
+    keyboard = VkKeyboard()
+    keyboard.add_button('Продолжить')
+    keyboard.add_button('Завершить')
+    return f'{ANSWERS.get(message)}', keyboard.get_keyboard(), None
+
+def _listen_anket(message:str) -> tuple:
+    keyboard = VkKeyboard(one_time=False)
+    keyboard.add_button('Далее')
+    keyboard.add_button('В избранное')
+    keyboard.add_line() 
+    keyboard.add_button('Завершить')
+    return ANSWERS.get(message), keyboard.get_keyboard(), None
 
 def _finish(message:str) -> tuple:
     """Генерирует кнопки клавиатуры в ответ на Завершить'
@@ -52,7 +68,6 @@ def _finish(message:str) -> tuple:
     keyboard.add_button('Начать')
     keyboard.add_button('Завершить')
     return ANSWERS.get(message), keyboard.get_keyboard(), None
-
 
 with open('messages.json', encoding='UTF-8') as file:
     ANSWERS = json.load(file)

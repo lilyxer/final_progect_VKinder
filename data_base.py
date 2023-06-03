@@ -21,7 +21,6 @@ def create_db():
             cur.execute("""CREATE DATABASE vkinder_db;""")
             print('[+] База данных vkinder_db создана')
         except Exception as e:
-            print(e, end='')
             print(f'[-] База данных vkinder_db была создана ранее')
             conn.rollback()
         conn.close()
@@ -46,7 +45,6 @@ class VKengine:
         self._engine = self._create_engine_connection()
         Session = sessionmaker(bind=self._engine)
         self._session = Session()
-        print('[+] Соединение с БД')
         self._create_tables()
 
     def _create_engine_connection(self):
@@ -68,7 +66,7 @@ class VKengine:
         :anket_id: уникальный id анкет поиска
         :like: флаг для избранных
         """
-        send = User(profile_id=profile_id, anket_id=anket_id, like=like)
+        self._session.add(User(profile_id=profile_id, anket_id=anket_id, like=like))
         self._session.commit()
 
     def request_id(self, profile_id: int,  anket_id: int) -> bool:
@@ -88,15 +86,10 @@ class VKengine:
         return self._session.query(User).filter(User.profile_id==profile_id, 
                                                 User.like==True).all()
 
-    def closed(self) -> None:
-        """
-        """
-        print('[-] Соединение с БД закрыто')
-        self._session.close()
-
     def __str__(self) -> None:
         return f'{self.__class__} {self.__name__}'
 
 if __name__ == '__main__':
     create_db()
     eng = VKengine()
+    print(eng.request_id(profile_id=2674056, anket_id=109560654))

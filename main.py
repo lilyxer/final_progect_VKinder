@@ -18,17 +18,14 @@ class BotFront:
     authorize = False
     api = False
     dialog = False
-    # ANSWERS = None
   
     def __init__(self) -> None:
         self._do_authorize()
         self.api = BotBack(token=env('ACCES_TOKEN'))
+        self.data = VKengine()
         self.params = None
-        # self.ANSWERS = self._get_answers()
         if self.authorize and self.api:
-            print('[+] Авторизация ВК успешна')
             create_db()
-            
 
     def _do_authorize(self) -> None:
         """Проходим авторизацию для работы бота с чатом
@@ -37,33 +34,28 @@ class BotFront:
             self.authorize = vk_api.VkApi(token=env('GROUP_TOKEN'))
         except ApiError as e:
             print(e.error['error_msg'])
-
-    def _get_answers(self) -> dict:
-        with open('messages.json', encoding='UTF-8') as file:
-            return json.load(file)
-    
-    def write_msg(self, user_id: int, message: str, attachment=None) -> None:
+   
+    def write_msg(self, user_id: int, message: str, 
+                  keyboard=None, attachment=None) -> None:
         """Отвечает на сообщения чата
         :user_id: - id начавшего диалог
         :message: сообщение которое будет отправлено в чат
         :attachment: не текстовое сообщение, в нашем случае фото анкеты
         :keyboard: кнопки клавиатуры для упрощения общения
         """
-        # keyboard = VkKeyboard()
-        actions = {'Начать': k_board._start(message),
-                   'Продолжить': k_board._confirm(message),
-                   'Далее': k_board._next_step(message),
-                   # 'Избранное': favorites,
-                    # 'Следующая': next_anket(),
-                    # 'В избранное': next_anket(like=True),
-                    'Завершить': k_board._finish(message),
-                }
-
-        msg, buttons, attachment = actions.get(message) if actions.get(message) else k_board._greet(self.params)
-        param = {'user_id': user_id, 'message': msg,
-                'attachment': attachment, 'random_id': get_random_id(),
-                'keyboard': buttons,}
+        param = {'user_id': user_id, 'message': message, 'attachment': attachment, 
+                 'random_id': get_random_id(), 'keyboard': keyboard,}
         self.authorize.method('messages.send', param)
+
+    def _get_profiles(self):
+        search_list = self.api.search_users(params=self.params)
+        if search_list:
+            for user in search_list:
+                if not self.data.request_id(profile_id=self.params['id'], anket_id=user['id']):
+                    self.data.add_user(profile_id=self.params['id'], anket_id=user['id'])
+                    yield user
+        else:
+            return self._get_profiles()
 
     def tracking(self):
         """Эхо чата, создаем сеанс отслеживания событий чата"""
@@ -71,29 +63,88 @@ class BotFront:
         for event in longpoll.listen():
             if event.type == VkEventType.MESSAGE_NEW and event.to_me:
                 msg = event.text
-                if not self.dialog:
-                    vk_engine = VKengine()
-                    self.dialog = True
+                if not self.dialog and msg:
                     self.params = self.api._get_info(sender_id=event.user_id)
-                    self.write_msg(user_id=event.user_id, message=msg)
+                    _msg, _board, _att = k_board._greet(self.params)
+                    self.write_msg(user_id=event.user_id, message=_msg, 
+                                   keyboard=_board, attachment=_att)
+                    self.dialog = '_greet'
+
+                elif msg == 'Начать':
+                    _msg, _board, _att = k_board._start(msg)
+                    self.write_msg(user_id=event.user_id, message=_msg, 
+                                   keyboard=_board, attachment=_att)
+                    self.dialog = '_start'
+
+                elif msg == 'Завершить':
+                    _msg, _board, _att = k_board._finish(msg)
+                    self.write_msg(user_id=event.user_id, message=_msg, 
+                                   keyboard=_board, attachment=_att)
+                    self.params = None
+                    self.dialog = False
+
+                elif msg == 'Продолжить':
+                    _msg, _board, _att = k_board._confirm(msg, self.params)
+                    self.write_msg(user_id=event.user_id, message=_msg, 
+                                   keyboard=_board, attachment=_att)
+                    self.dialog = '_confirm'
+                
+                elif self.dialog == '_confirm':
+                    if msg == 'Нет':
+                        _msg, _board, _att = k_board._next_step(msg)
+                        self.write_msg(user_id=event.user_id, 
+                                       message='Выберите что будете менять',
+                                       keyboard=_board, attachment=_att)
+
+                    elif msg == 'Город':
+                        _msg, _board, _att = k_board._correct_params(msg)
+                        self.write_msg(user_id=event.user_id, message=_msg, 
+                                       keyboard=_board, attachment=_att)
+                        self.dialog = '_confirm_city'
+                    
+                    elif msg == 'Возраст':
+                        _msg, _board, _att = k_board._correct_params(msg)
+                        self.write_msg(user_id=event.user_id, message=_msg, 
+                                       keyboard=_board, attachment=_att)
+                        self.dialog = '_confirm_age'
+                    
+                    elif msg == 'Да':
+                        """получаем анкеты"""
+                        _msg, _board, _att = k_board._listen_anket(msg)
+                        self.write_msg(user_id=event.user_id, message=_msg, 
+                                       keyboard=_board, attachment=_att)
+                        self.dialog = '_in_search'
+                        
+                elif msg and self.dialog == '_confirm_city':
+                    self.params['city'] = msg
+                    self.dialog == '_confirm'
+
+                elif msg and self.dialog == '_confirm_age':
+                    try:
+                        self.params['age'] = int(msg)
+                        self.dialog == '_confirm'
+                    except ValueError:
+                        err = f'{msg} не является числом'
+                        self.write_msg(user_id=event.user_id, message=err)
+
+                elif self.dialog == '_in_search':
+                    if msg == 'Далее':
+                        _msg = next(self._get_profiles())
+                        _att = self.api.get_photos(id=_msg['id'])
+                        self.write_msg(user_id=event.user_id, message=f'{_msg["f"]} -> vk.com/id{_msg["id"]}', 
+                                       keyboard=_board, attachment=_att)
+
+
+                elif msg == 'Избранное':
+                    """подключаемся к базе, получаем список анкет, генерируем"""
+                    self.dialog = '_favorite'
+
                 else:
-                    self.write_msg(user_id=event.user_id, message=msg)
-                    if msg == 'Завершить':
-                        self.dialog = False
-                        vk_engine.closed()
-
-
-# def correct(msg, user_info):
-#     keyboard = VkKeyboard()
-#     keyboard.add_button('Всё верно')
-#     keyboard.add_button('Закончить')
-#     keyboard.add_line()
-#     keyboard.add_button('Хочу изменить возраст')
-#     keyboard.add_button('Хочу изменить город')
-#     msg = ANSWERS.get(msg)
-#     text = f'Ваш возарст: {user_info.get("age", "нет информации")} город: {user_info.get("city")}'
-#     write_msg(user_id=sender_id, message=f'{text}\n{msg}', keyboard=keyboard)
-    
+                    _msg, _board, _att = k_board._greet(self.params)
+                    self.write_msg(user_id=event.user_id, 
+                                   message='Я вас не понимаю, воспользуйтесь кнопками',
+                                   keyboard=_board, attachment=_att)
+                print(self.dialog)
 
 
 if __name__ == '__main__':

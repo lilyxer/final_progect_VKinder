@@ -20,7 +20,7 @@ class BotBack:
         :sender_id: id начавшего диалог
         :return: имя, фамилия, возараст, пол, город
         """
-        data =  {'name' : None, 'city': None, 'age': None, 'sex': None}
+        data =  {'id': sender_id, 'name' : None, 'city': None, 'age': None, 'sex': None}
         try:
             info, = self.api.method('users.get', {'user_ids': sender_id,
                                 'fields': ('bdate, city, sex'),})
@@ -43,13 +43,13 @@ class BotBack:
             :age: 35
             :sex: 1- Жен, 2-Муж
         :return: список анкет"""
-        values = {'count': 10, 'offset': self.offset,
+        values = {'count': 5, 'offset': self.offset,
                   'age_from': params['age'] - 3,
                   'age_to': params['age'] + 3,
                   'sex': 1 if params['sex'] == 2 else 2,
                   'hometown': params['city'],
                   'status': (1, 6), 'is_closed': False,}
-        self.offset += 10
+        self.offset += 5
         users = self.api.method('users.search', values=values)
         if users.get('items'):
             users = [{'id': user['id'], 
@@ -66,11 +66,17 @@ class BotBack:
                                                 'album_id': 'profile',
                                                 'extended': 1}) 
         if photos.get('items'):
-            all_photos = [{sorted(item['sizes'], key=lambda x: grade.get(x['type'], 0))[-1]['url']:
-                           item['likes']['count'] + item['comments']['count']}
-                          for item in photos['items']]
-            return [k for ph in all_photos 
-                    for k, v in sorted(ph.items(), key=lambda i: i[1], reverse=True)][:3]
+            all_owners = [(item['id'], item['likes']['count'] + item['comments']['count']) 
+                     for item in photos['items']]
+            owners_top_3 = [k[0] for k in sorted(all_owners, key=lambda d: d[1], reverse=True)][0]
+
+            # all_photos = [{sorted(item['sizes'], key=lambda x: grade.get(x['type'], 0))[-1]['url']:
+            #                item['likes']['count'] + item['comments']['count']}
+            #               for item in photos['items']]
+            # url_top_3 = [k for ph in all_photos 
+            #              for k, v in sorted(ph.items(), key=lambda i: i[1], reverse=True)][:3]
+            return f'photo{id}_{owners_top_3}'
+            return '\n'.join(f'photo{id}_{owner}' for owner in owners_top_3)
     
 if __name__ == '__main__':
     bot = BotBack(token=env('ACCES_TOKEN'))
@@ -79,8 +85,8 @@ if __name__ == '__main__':
     #                             'age': 35,
     #                             'sex': 2}):
     #     print(anket['id'])
-    for x in range(1, 3):
-        print(bot.search_users(params={'city': 'Москва',
-                                'age': 35,
-                                'sex': 2}))
-
+    # for x in range(1, 3):
+    #     print(bot.search_users(params={'city': 'Москва',
+    #                             'age': 35,
+    #                             'sex': 2}))
+    print(bot.get_photos(2674056))
