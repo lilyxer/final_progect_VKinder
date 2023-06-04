@@ -2,6 +2,7 @@ import vk_api
 from vk_api.exceptions import ApiError
 from environs import Env
 from datetime import date
+# from random import randint
 
 
 env = Env()
@@ -47,15 +48,15 @@ class BotBack:
                   'age_from': params['age'] - 3,
                   'age_to': params['age'] + 3,
                   'sex': 1 if params['sex'] == 2 else 2,
-                  'hometown': params['city'],
-                  'status': (1, 6), 'is_closed': False,}
+                  'hometown': params['city'], 'has_photo': 1,
+                  'status': 6, 'is_closed': False,}
         self.offset += 5
         users = self.api.method('users.search', values=values)
         if users.get('items'):
             users = [{'id': user['id'], 
                       'f': f"{user.get('first_name', '')} {user.get('last_name', '')}"} 
                      for user in users['items'] if not user['is_closed']]
-        return users
+            return users
     
     def get_photos(self, id: int) -> list:
         """Принимает id профиля из найденной анкеты
@@ -85,8 +86,8 @@ if __name__ == '__main__':
     #                             'age': 35,
     #                             'sex': 2}):
     #     print(anket['id'])
-    # for x in range(1, 3):
-    #     print(bot.search_users(params={'city': 'Москва',
-    #                             'age': 35,
-    #                             'sex': 2}))
-    print(bot.get_photos(2674056))
+    for x in range(1, 10):
+        print(bot.search_users(params={'city': 'Можайск',
+                                'age': 35,
+                                'sex': 2}))
+    # print(bot.get_photos(2674056))

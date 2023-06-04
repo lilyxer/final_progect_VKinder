@@ -69,6 +69,18 @@ class VKengine:
         self._session.add(User(profile_id=profile_id, anket_id=anket_id, like=like))
         self._session.commit()
 
+    def update_user(self, profile_id: int, anket_id: int, like: bool=True) -> None:
+        """ Добавляет в БД просмотренные анкеты
+        :profile_id: уникальный id аккауанта во ВКонтакте
+        :anket_id: уникальный id анкет поиска
+        :like: флаг для избранных
+        """
+        self._session.query(User).filter(User.profile_id==profile_id, 
+                                         User.anket_id == anket_id).update(
+                                            {User.like: like,}
+                                         )
+        self._session.commit()
+
     def request_id(self, profile_id: int,  anket_id: int) -> bool:
         """Ищет в БД просмотренную анкету
         :profile_id: уникальный id аккауанта во ВКонтакте
@@ -83,13 +95,14 @@ class VKengine:
         :profile_id: уникальный id аккауанта во ВКонтакте
         :return: список из anket_id которые отмечены like=True
         """
-        return self._session.query(User).filter(User.profile_id==profile_id, 
+        print('Я делаю запрос')
+        return self._session.query(User.anket_id).filter(User.profile_id==profile_id, 
                                                 User.like==True).all()
 
-    def __str__(self) -> None:
-        return f'{self.__class__} {self.__name__}'
+    # def __str__(self) -> None:
+    #     return f'{}'
 
 if __name__ == '__main__':
     create_db()
     eng = VKengine()
-    print(eng.request_id(profile_id=2674056, anket_id=109560654))
+    print(eng.request_favorite(profile_id=2674056))
