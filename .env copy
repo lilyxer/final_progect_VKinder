@@ -1,0 +1,17 @@
+# Пустоты заполнить своими данными 
+# .env copy переименовать в .env 
+
+GROUP_TOKEN = ''
+ACCES_TOKEN = ''
+
+DRIVER = 'postgresql'
+LOGIN = 'postgres'
+PASSWORD  = ''
+HOST = 'localhost'
+PORT = '5432'
+DATABASE = ''
+
+# f-строка не проходит :(
+URL = f"{DRIVER}://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}"
+# "Получение ACCES_TOKEN"
+# https://vkhost.github.io/

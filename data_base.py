@@ -1,5 +1,5 @@
 import sqlalchemy as sq
-from sqlalchemy.orm import relationship, DeclarativeBase, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 import psycopg2
 from environs import Env
 
@@ -31,8 +31,7 @@ class Base(DeclarativeBase):
 class User(Base):
     """Создаёт класс-отношение для пользователя бота
     :profile_id: уникальный id аккауанта во ВКонтакте
-    :anket_id: уникальный id анкет поиска
-    """
+    :anket_id: уникальный id анкет поиска"""
     __tablename__ = 'users'
 
     profile_id  = sq.Column(sq.Integer, primary_key=True)
@@ -48,8 +47,7 @@ class VKengine:
         self._create_tables()
 
     def _create_engine_connection(self):
-        """Создаёт движок сессии
-        """
+        """Создаёт движок сессии"""
         DSN = f"{env('DRIVER')}://{env('LOGIN')}:{env('PASSWORD')}@{env('HOST')}:{env('PORT')}/{env('DATABASE')}"
         engine = sq.create_engine(DSN)
         return engine
@@ -64,8 +62,7 @@ class VKengine:
         """ Добавляет в БД просмотренные анкеты
         :profile_id: уникальный id аккауанта во ВКонтакте
         :anket_id: уникальный id анкет поиска
-        :like: флаг для избранных
-        """
+        :like: флаг для избранных"""
         self._session.add(User(profile_id=profile_id, anket_id=anket_id, like=like))
         self._session.commit()
 
@@ -73,8 +70,7 @@ class VKengine:
         """ Добавляет в БД просмотренные анкеты
         :profile_id: уникальный id аккауанта во ВКонтакте
         :anket_id: уникальный id анкет поиска
-        :like: флаг для избранных
-        """
+        :like: флаг для избранных"""
         self._session.query(User).filter(User.profile_id==profile_id, 
                                          User.anket_id == anket_id).update(
                                             {User.like: like,}
@@ -85,22 +81,17 @@ class VKengine:
         """Ищет в БД просмотренную анкету
         :profile_id: уникальный id аккауанта во ВКонтакте
         :anket_id: уникальный id анкет поиска
-        :return: True если совпадение есть иначе False
-        """
+        :return: True если совпадение есть иначе False"""
         return bool(self._session.query(User).filter(User.profile_id==profile_id, 
                                                 User.anket_id == anket_id).all())
     
     def request_favorite(self, profile_id: int) -> list:
         """Ищет в БД просмотренную анкету, котру добавили в ибранное
         :profile_id: уникальный id аккауанта во ВКонтакте
-        :return: список из anket_id которые отмечены like=True
-        """
-        print('Я делаю запрос')
+        :return: список из anket_id которые отмечены like=True"""
         return self._session.query(User.anket_id).filter(User.profile_id==profile_id, 
-                                                User.like==True).all()
+                                                         User.like==True).all()
 
-    # def __str__(self) -> None:
-    #     return f'{}'
 
 if __name__ == '__main__':
     create_db()

@@ -1,7 +1,5 @@
-config.py
 .git
 /__pycache__/
-/models/__pycache__/
 /venv_VKinder/
 /.idea/
 .env
