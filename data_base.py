@@ -31,11 +31,12 @@ class Base(DeclarativeBase):
 class User(Base):
     """Создаёт класс-отношение для пользователя бота
     :profile_id: уникальный id аккауанта во ВКонтакте
-    :anket_id: уникальный id анкет поиска"""
+    :anket_id: уникальный id анкет поиска
+    :like: по умолчанию False, необходим для изьраных анкет"""
     __tablename__ = 'users'
 
-    profile_id  = sq.Column(sq.Integer, primary_key=True)
-    anket_id  = sq.Column(sq.Integer, primary_key=True)
+    profile_id = sq.Column(sq.Integer, primary_key=True)
+    anket_id = sq.Column(sq.Integer, primary_key=True)
     like = sq.Column(sq.Boolean(), default=False)
     
 
